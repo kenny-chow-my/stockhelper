@@ -1,37 +1,34 @@
 package com.zyden.stockhelper.model;
 
-import org.springframework.data.annotation.Id;
-
 /**
  * Created by Kenny on 4/19/2017.
  */
 public class ImageFile {
-    @Id
-    private String id;
-    private byte[] image;
-    private String path;
+    private String imageDataBase64;
+    private String filename;
+    private String contentType;
 
-    public String getPath() {
-        return path;
+    public String getContentType() {
+        return contentType;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
-    public String getId() {
-        return id;
+    public String getImageDataBase64() {
+        return imageDataBase64;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setImageDataBase64(String imageDataBase64) {
+        this.imageDataBase64 = imageDataBase64;
     }
 
-    public byte[] getImage() {
-        return image;
+    public String getFilename() {
+        return filename;
     }
 
-    public void setImage(byte[] image) {
-        this.image = image;
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 }

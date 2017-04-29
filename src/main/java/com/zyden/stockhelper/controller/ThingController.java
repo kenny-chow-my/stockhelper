@@ -2,15 +2,13 @@ package com.zyden.stockhelper.controller;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.gridfs.GridFSFile;
-import com.zyden.stockhelper.datasource.GoogleVisionAPI;
 import com.zyden.stockhelper.datasource.IVisionAPI;
 import com.zyden.stockhelper.model.ImageFile;
-import com.zyden.stockhelper.model.Stock;
 import com.zyden.stockhelper.model.Thing;
 import com.zyden.stockhelper.model.UserThing;
 import com.zyden.stockhelper.repo.ThingRepo;
 import com.zyden.stockhelper.repo.UserThingRepo;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
@@ -21,11 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -72,30 +71,33 @@ public class ThingController {
     }
 
     @RequestMapping(method = RequestMethod.POST, value="/upload")
-    public @ResponseBody Thing uploadThing(@RequestParam(value="image", required=true) MultipartFile file) {
-        if (file.isEmpty()) {
+    public @ResponseBody UserThing uploadThing(@RequestBody ImageFile imageFile) {
+        if (imageFile == null || imageFile.getImageDataBase64().isEmpty()) {
             log.error("Empty file uploaded");
             throw new java.lang.RuntimeException("Empty file");
         }
         Thing t = new Thing();
         try {
+            byte[] imageData = stripDataEncoding(imageFile.getImageDataBase64());
+
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] sha256 = md.digest(file.getBytes());
-            String id =  org.apache.commons.codec.binary.Hex.encodeHexString(sha256);
+            byte[] imgDataSHA256 = md.digest(imageData);
+            String id =  org.apache.commons.codec.binary.Hex.encodeHexString(imgDataSHA256);
 
             if(thingRepo.exists(id)){
                 log.info("Using existing Thing:" + id);
                 t = getThing(id);
             }
             else {
-                InputStream inputStream = file.getInputStream();
+                //InputStream inputStream = file.getInputStream();
                 DBObject metaData = new BasicDBObject();
-                metaData.put("fileName", file.getOriginalFilename());
-                metaData.put("fileSize", file.getSize());
+                metaData.put("fileName", imageFile.getFilename());
+                metaData.put("fileSize", imageData.length);
+                metaData.put("fileType", imageFile.getContentType());
 
-                gridFsOperations.store(inputStream, id, file.getContentType(), metaData);
+                gridFsOperations.store(new ByteArrayInputStream(imageData), id, metaData);
 
-                Map<String, BigDecimal> labels = visionAPI.getLabels(file.getBytes());
+                Map<String, BigDecimal> labels = visionAPI.getLabels(imageData);
 
                 t.setId(id);
                 t.setSha256(id);
@@ -104,26 +106,30 @@ public class ThingController {
                 t.setThumbnailPngBase64(generateThumbnail());
                 t = thingRepo.save(t);
             }
-        } catch (IOException e) {
-            log.error("Unable to create ImageFile object", e);
-            throw new RuntimeException("Upload failed");
-        } catch (NoSuchAlgorithmException e) {
+        }  catch (NoSuchAlgorithmException e) {
             log.error("Unable to generate SHA-256 for ImageFile object", e);
             throw new RuntimeException("Upload failed");
         }
         //Auto create a UserThing repo relationship
-        createUserThing(t);
-        return t;
+        return createUserThing(t);
+
     }
 
-    private void createUserThing(Thing t) {
+    private byte[] stripDataEncoding(String imgDataBase64) {
+        //Strip the base64 front of image data e.g. data:image/jpeg;base64,/9j/4AA...
+        String encodingPrefix = "base64,";
+        int contentStartIndex = imgDataBase64.indexOf(encodingPrefix) + encodingPrefix.length();
+        return Base64.decodeBase64( imgDataBase64.substring(contentStartIndex));
+    }
+
+    private UserThing createUserThing(Thing t) {
         String currentUser = "0";
 
         UserThing ut = new UserThing();
         ut.setLastModified(new Date());
         ut.setOwnerId(currentUser);
         ut.setThing(t);
-        userThingRepo.save(ut);
+        return userThingRepo.save(ut);
 
     }
 
