@@ -35,7 +35,7 @@ import java.util.Map;
  * Created by Kenny on 4/18/2017.
  */
 
-@CrossOrigin(origins = "http://localhost:8889")
+@CrossOrigin
 @RestController
 @RequestMapping("/api/v1/things")
 public class ThingController {
