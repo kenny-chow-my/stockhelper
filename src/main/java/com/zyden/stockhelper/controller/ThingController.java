@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -125,10 +126,15 @@ public class ThingController {
     private UserThing createUserThing(Thing t) {
         String currentUser = "0";
 
+        //TODO: allow user to select labels
+        // for now, just select everything by default
+        List<String> labels = new ArrayList(t.getLabelScore().keySet());
+
         UserThing ut = new UserThing();
         ut.setLastModified(new Date());
         ut.setOwnerId(currentUser);
         ut.setThing(t);
+        ut.setSelectedLabels(labels);
         return userThingRepo.save(ut);
 
     }
