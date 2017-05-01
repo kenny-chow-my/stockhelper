@@ -71,6 +71,12 @@ public class ThingController {
         return saved;
     }
 
+    @RequestMapping(method = RequestMethod.PUT)
+    public @ResponseBody UserThing updateUserThing(@RequestBody UserThing userThing){
+        UserThing saved = userThingRepo.save(userThing);
+        return saved;
+    }
+
     @RequestMapping(method = RequestMethod.POST, value="/upload")
     public @ResponseBody UserThing uploadThing(@RequestBody ImageFile imageFile) {
         if (imageFile == null || imageFile.getImageDataBase64().isEmpty()) {
