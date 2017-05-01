@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by Kenny on 4/18/2017.
  */
-@Document(collection="userthings")
+@Document(collection = "userthings")
 public class UserThing {
 
     @Id
@@ -33,6 +33,16 @@ public class UserThing {
     private Date reminder;
 
     private Date lastModified;
+
+    private String thumbnailDataURI;
+
+    public String getThumbnailDataURI() {
+        return thumbnailDataURI;
+    }
+
+    public void setThumbnailDataURI(String thumbnailDataURI) {
+        this.thumbnailDataURI = thumbnailDataURI;
+    }
 
     public String getId() {
         return id;
@@ -57,6 +67,7 @@ public class UserThing {
     public void setSelectedLabels(List<String> selectedLabels) {
         this.selectedLabels = selectedLabels;
     }
+
 
     public String getTitle() {
         return title;
