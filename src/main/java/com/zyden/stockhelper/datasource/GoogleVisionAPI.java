@@ -8,6 +8,7 @@ import com.google.api.services.vision.v1.Vision;
 import com.google.api.services.vision.v1.VisionScopes;
 import com.google.api.services.vision.v1.model.*;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.springframework.stereotype.Component;
 
@@ -92,6 +93,7 @@ public class GoogleVisionAPI implements IVisionAPI {
      * Connects to the Vision API using Application Default Credentials.
      */
     private Vision getVisionService() throws IOException, GeneralSecurityException {
+        createCredFile();
         GoogleCredential credential =
                 GoogleCredential.getApplicationDefault().createScoped(VisionScopes.all());
 
@@ -99,6 +101,17 @@ public class GoogleVisionAPI implements IVisionAPI {
         return new Vision.Builder(GoogleNetHttpTransport.newTrustedTransport(), jsonFactory, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build();
+    }
+
+    private void createCredFile() {
+        //Setup Google App Credentials (for heroku config)
+        String googleappcredjson = new String(Base64.decodeBase64(System.getenv("GOOGLEAPPCREDJSON")));
+        String googleappcredfilepath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        try {
+            Files.write(Paths.get(googleappcredfilepath), googleappcredjson.getBytes());
+        } catch (IOException e) {
+            log.error("Unable to create Cred File", e);
+        }
     }
 
     /**
