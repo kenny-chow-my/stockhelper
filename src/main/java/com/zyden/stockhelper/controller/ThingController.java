@@ -11,6 +11,7 @@ import com.zyden.stockhelper.repo.UserThingRepo;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.http.HttpHeaders;
@@ -41,7 +42,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
  * Created by Kenny on 4/18/2017.
  */
 
-@CrossOrigin
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/things")
 public class ThingController {
@@ -59,6 +60,10 @@ public class ThingController {
 
     @Autowired
     private UserThingRepo userThingRepo;
+
+    @Value("${wipeall.password}")
+    private String wipeAllProp;
+
 
     @RequestMapping(method = RequestMethod.GET)
     public @ResponseBody
@@ -84,6 +89,35 @@ public class ThingController {
     UserThing updateUserThing(@RequestBody UserThing userThing) {
         UserThing saved = userThingRepo.save(userThing);
         return saved;
+    }
+
+
+    @RequestMapping(value="/wipeall" , method = RequestMethod.DELETE)
+    public @ResponseBody String wipeEverything(@RequestBody String password) {
+        if(password == this.wipeAllProp){
+            log.warn("Wiping all database!");
+            userThingRepo.deleteAll();
+            thingRepo.deleteAll();
+            return "Wiped all";
+        }
+
+        return "No action: " + password;
+
+    }
+    @RequestMapping(method = RequestMethod.DELETE)
+    public void deleteUserThing(@RequestBody String thingId) {
+        if(!thingRepo.exists(thingId)){
+            log.error("Cannot find ThingId: " + thingId);
+            throw new java.lang.RuntimeException("No such Thing: " + thingId);
+        }
+        List<UserThing> userthings = userThingRepo.findAll();
+        for(UserThing userthing : userthings){
+            if(userthing.getThing() == null || userthing.getThing().getId() == thingId){
+                userThingRepo.delete(userthing.getId());
+            }
+        }
+        thingRepo.delete(thingId);
+
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/upload")
@@ -190,8 +224,13 @@ public class ThingController {
             Image img = ImageIO.read(bais).getScaledInstance(100, 100, BufferedImage.SCALE_SMOOTH);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             BufferedImage buffered = new BufferedImage(100, 100, TYPE_INT_RGB);
+            Graphics2D bGr = buffered.createGraphics();
+            bGr.drawImage(img, 0, 0, null);
+            bGr.dispose();
+
             ImageIO.write(buffered, "png", baos);
-            imageString = "data:image/png;base64," + Base64.encodeBase64(baos.toByteArray());
+            imageString = "data:image/png;base64," +  Base64.encodeBase64String(baos.toByteArray());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
