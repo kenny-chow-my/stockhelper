@@ -30,7 +30,7 @@ import java.util.Map;
 public class GoogleVisionAPI implements IVisionAPI {
 
     /**
-     * Be sure to specify the name of your application. If the application name is {@code null} or
+     * Be sure to specify the username of your application. If the application username is {@code null} or
      * blank, the application will log a warning. Suggested format is "MyCompany-ProductName/1.0".
      */
     private static final String APPLICATION_NAME = "Zyden-StockHelper/1.0";
@@ -105,11 +105,13 @@ public class GoogleVisionAPI implements IVisionAPI {
 
     private void createCredFile() {
         //Setup Google App Credentials (for heroku config)
-        String googleappcredjson = new String(Base64.decodeBase64(System.getenv("GOOGLEAPPCREDJSON")));
-        String googleappcredfilepath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
         try {
+            String googleAppCredJSON = System.getenv("GOOGLEAPPCREDJSON");
+            if(googleAppCredJSON.isEmpty()) { throw new RuntimeException("GOOGLEAPPCREDJSON is empty");}
+            String googleappcredjson = new String(Base64.decodeBase64(googleAppCredJSON));
+            String googleappcredfilepath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
             Files.write(Paths.get(googleappcredfilepath), googleappcredjson.getBytes());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Unable to create Cred File", e);
         }
     }

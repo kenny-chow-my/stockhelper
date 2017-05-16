@@ -25,7 +25,7 @@ public class StockTest {
 		System.out.println("Day High: " + facebook.getDayhigh());
 		System.out.println("50 Day Moving Av: " + facebook.getMovingav50day());
 		System.out.println("Market Cap: " + facebook.getMarketcap());
-		System.out.println("The full name is: " + facebook.getName());
+		System.out.println("The full username is: " + facebook.getName());
 		System.out.println("The currency is: " + facebook.getCurrency());
 		System.out.println("The short ratio is: " + facebook.getShortRatio());
 		System.out.println("The previous close was: " + facebook.getPreviousClose());
